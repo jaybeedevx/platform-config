@@ -1,0 +1,3 @@
+# anything not needed in the packaged chart
+.tests/
+.git/

@@ -1,0 +1,98 @@
+namespace: webapp
+
+backend:
+  image:
+    repository: ghcr.io/jaybeedevx/webapp-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPU: 70
+    targetMemory: 80
+  pdb:
+    minAvailable: 1
+  probes:
+    startup:
+      path: /healthz
+      initialDelaySeconds: 0
+      periodSeconds: 2
+      failureThreshold: 30
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 3
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  config:
+    APP_ENV: production
+    LOG_LEVEL: info
+
+frontend:
+  image:
+    repository: ghcr.io/jaybeedevx/webapp-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPU: 70
+    targetMemory: 80
+  pdb:
+    minAvailable: 1
+  probes:
+    liveness:
+      path: /healthz
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 2
+      failureThreshold: 3
+    readiness:
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 2
+      failureThreshold: 3
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+
+secrets:
+  apiKey: change-me
+
+ingress:
+  enabled: true
+  className: nginx
+  host: webapp.example.com
+  path: /
+  tls:
+    enabled: true
+    secretName: webapp-tls
+  clusterIssuer: letsencrypt-prod
