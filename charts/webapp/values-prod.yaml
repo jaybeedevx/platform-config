@@ -1,0 +1,26 @@
+backend:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  hpa:
+    minReplicas: 3
+    maxReplicas: 10
+frontend:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  hpa:
+    minReplicas: 3
+    maxReplicas: 8
+ingress:
+  host: webapp.prod.example.com
