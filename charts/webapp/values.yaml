@@ -84,6 +84,12 @@ frontend:
   nodeSelector: {}
   tolerations: []
 
+# Observability. Requires the Prometheus operator's monitoring.coreos.com CRDs
+# (installed via kube-prometheus-stack). Set enabled: false if the operator is
+# not present in the cluster -- ArgoCD cannot render a ServiceMonitor without it.
+monitoring:
+  enabled: true
+
 secrets:
   apiKey: change-me
 
