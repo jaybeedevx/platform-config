@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/kubernetes/ingress-nginx
+    repoURL: https://github.com/kubernetes/nginx
     targetRevision: controller-v1.10.0
     path: deploy/static/provider/aws
   destination:
