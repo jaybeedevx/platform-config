@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webapp.fullname" . }}-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "webapp.backend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "webapp.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "webapp.fullname" . }}-backend
+      affinity:
+        {{- toYaml .Values.backend.affinity | nindent 8 }}
+      nodeSelector:
+        {{- toYaml .Values.backend.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.backend.tolerations | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: {{ .Values.backend.config.APP_ENV | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.backend.config.LOG_LEVEL | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "webapp.fullname" . }}-backend-config
+            - secretRef:
+                name: {{ include "webapp.fullname" . }}-secret
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.startup.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.backend.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.backend.probes.startup.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.probes.readiness.failureThreshold }}

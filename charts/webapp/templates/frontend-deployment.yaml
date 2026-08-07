@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webapp.fullname" . }}-frontend
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "webapp.frontend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "webapp.frontend.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "webapp.fullname" . }}-frontend
+      affinity:
+        {{- toYaml .Values.frontend.affinity | nindent 8 }}
+      nodeSelector:
+        {{- toYaml .Values.frontend.nodeSelector | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.frontend.tolerations | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: var-run
+              mountPath: /var/run
+            - name: var-cache-nginx
+              mountPath: /var/cache/nginx
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.frontend.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.frontend.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.frontend.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.frontend.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.frontend.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.frontend.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.frontend.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.frontend.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.frontend.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.frontend.probes.readiness.failureThreshold }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: var-run
+          emptyDir: {}
+        - name: var-cache-nginx
+          emptyDir: {}
