@@ -22,5 +22,10 @@ frontend:
   hpa:
     minReplicas: 3
     maxReplicas: 8
+# Prometheus operator not yet installed in this cluster (see modules/addons).
+# Flip this to true once kube-prometheus-stack is provisioned.
+monitoring:
+  enabled: false
+
 ingress:
   host: webapp.prod.example.com
