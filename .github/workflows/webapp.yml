@@ -9,6 +9,9 @@ on:
     paths:
       - "charts/webapp/**"
       - "src/**"
+  # Manual trigger: run the images job on demand from the branch you pick
+  # (Actions > "webapp" > "Run workflow"). Useful to build/push before a merge.
+  workflow_dispatch:
 
 jobs:
   helm:
@@ -51,11 +54,13 @@ jobs:
       - name: Build
         run: npm run build
 
-  # Build and push immutable, git-SHA-tagged images to GHCR on main.
-  # To deploy a new build: bump the `tag` in charts/webapp/values.yaml to the
-  # SHA you want and let ArgoCD self-heal. No tag moves here — SHA is auditable.
+  # Build and push immutable, git-SHA-tagged images to GHCR.
+  # - Auto: on push to main (when a src/ change lands).
+  # - Manual: via workflow_dispatch from any branch (e.g. pre-merge test push).
+  # To deploy a build: bump the `tag` in charts/webapp/values.yaml to its SHA and
+  # let ArgoCD self-heal. No tag moves here — SHA is auditable.
   images:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
     runs-on: ubuntu-latest
     permissions:
       contents: read
