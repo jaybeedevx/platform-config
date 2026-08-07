@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "webapp.fullname" . }}-backend
+  namespace: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "webapp.fullname" . }}-frontend
+  namespace: {{ .Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "webapp.fullname" . }}-pod-reader
+  namespace: {{ .Values.namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "webapp.fullname" . }}-backend-pod-reader
+  namespace: {{ .Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "webapp.fullname" . }}-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "webapp.fullname" . }}-backend
+    namespace: {{ .Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "webapp.fullname" . }}-frontend-pod-reader
+  namespace: {{ .Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "webapp.fullname" . }}-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "webapp.fullname" . }}-frontend
+    namespace: {{ .Values.namespace }}
